@@ -3,11 +3,11 @@ package user
 import "gorm.io/gorm"
 
 type Repository interface {
-	FindAll() ([]User, error)
-	FindByID(ID int) (User, error)
+	// FindAll() ([]User, error)
+	// FindByID(ID int) (User, error)
 	Register(user User) (User, error)
-	RegisterMember(user User) (User, error)
-	Login()([]User, error)
+	// RegisterMember(user User) (User, error)
+	// Login()([]User, error)
 }
 
 type repository struct {

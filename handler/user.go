@@ -17,7 +17,7 @@ func NewUserHandler(userService user.Service) *userHandler {
 
 func (h *userHandler) Register(c *gin.Context) {
 
-	var userRequest user.PostRegisterBody
+	var userRequest user.User
 	if err := c.ShouldBindJSON(&userRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Body is invalid.",

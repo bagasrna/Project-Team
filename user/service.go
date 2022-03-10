@@ -1,11 +1,11 @@
 package user
 
 type Service interface {
-	FindAll() ([]User, error)
-	FindByID(ID int) (User, error)
+	// FindAll() ([]User, error)
+	// FindByID(ID int) (User, error)
 	Register(user User) (User, error)
-	RegisterMember(user User) (User, error)
-	Login() ([]User, error)
+	// RegisterMember(user User) (User, error)
+	// Login() ([]User, error)
 }
 
 type service struct {
@@ -16,7 +16,7 @@ func NewService(repository Repository) *service {
 	return &service{repository}
 }
 
-func (s *service) Register(input PostRegisterBody) (User, error) {
+func (s *service) Register(input User) (User, error) {
 	user := User{
 		Name:           input.Name,
 		Email:          input.Email,
@@ -34,8 +34,8 @@ func (s *service) Register(input PostRegisterBody) (User, error) {
 	return registerdUser, nil
 }
 
-func (s *service) FindAll() ([]User, error) {
-	users, err := s.repository.FindAll()
-	return users, err
-}
+// func (s *service) FindAll() ([]User, error) {
+// 	users, err := s.repository.FindAll()
+// 	return users, err
+// }
 
