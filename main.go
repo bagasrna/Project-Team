@@ -234,6 +234,70 @@ func InitRouter() {
 		}
 	})
 
+	r.PATCH("/api/auth/update-user", func(c *gin.Context) {
+		id, isIdExists := c.Params.Get("id")
+		if !isIdExists {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "ID is not supplied.",
+			})
+			return
+		}
+		var body patchUserBody
+		if err := c.BindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Body is invalid.",
+				"error":   err.Error(),
+			})
+			return
+		}
+		parsedId, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "ID is invalid.",
+				"error":   err.Error(),
+			})
+			return
+		}
+		user := User{
+			ID:       uint(parsedId),
+			Name:     body.Name,
+			Email:    body.Email,
+			Password: body.Password,
+		}
+		result := db.Model(&user).Updates(user)
+		if result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Error when updating the database.",
+				"error":   result.Error.Error(),
+			})
+			return
+		}
+		if result = db.Where("id = ?", parsedId).Take(&user); result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Error when querying the database.",
+				"error":   result.Error.Error(),
+			})
+			return
+		}
+		if result.RowsAffected < 1 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "User not found.",
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Update successful.",
+			"data":    user,
+		})
+	})
+
 	r.GET("/api/auth/ikan-segar", func(c *gin.Context) {
 		ikan := Ikan{}
 		if result := db.Where("kategori = ?", "ikan segar").Find(&ikan); result.Error != nil {
