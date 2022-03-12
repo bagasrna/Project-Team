@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"project/handler"
+	"project/user"
 	"strconv"
 	"time"
-	"project/user"
-	"project/handler"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -55,8 +55,6 @@ type Tweet struct {
 var db *gorm.DB
 var r *gin.Engine
 
-
-
 func InitDB() error {
 	_db, err := gorm.Open(mysql.Open("root:spenesa234@tcp(127.0.0.1:3306)/intern_workshop?parseTime=true"), &gorm.Config{})
 	if err != nil {
@@ -79,16 +77,6 @@ func InitDB() error {
 func InitGin() {
 	r = gin.Default()
 	r.Use(cors.Default())
-}
-
-type postRegisterBody struct {
-	Name           string `json:"nama"`
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	Alamat         string `json:"alamat"`
-	Jenis_Budidaya string `json:"jenis_budidaya"`
-	Lokasi_Tambak  string `json:"lokasi_tambak"`
-	Luas_Kolam     string `json:"luas_kolam"`
 }
 
 type postLoginBody struct {
@@ -159,7 +147,7 @@ func InitRouter() {
 	userService := user.NewService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
 
-	r.POST("/api/auth/register",userHandler.Register)
+	r.POST("/api/auth/register", userHandler.Register)
 
 	r.POST("/api/auth/register-member", func(c *gin.Context) {
 		var body User
@@ -257,8 +245,8 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful.",
+			"message": "Pencarian Berhasil",
+			"status":  "Sukses",
 			"data":    ikan,
 		})
 	})
@@ -274,8 +262,8 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful.",
+			"message": "Pencarian Berhasil",
+			"status":  "Sukses",
 			"data":    ikan,
 		})
 	})
@@ -291,8 +279,8 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful.",
+			"message": "Pencarian Berhasil",
+			"status":  "Sukses",
 			"data":    ikan,
 		})
 	})
@@ -700,11 +688,10 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	
+
 	InitGin()
 	InitRouter()
-	
-	
+
 	if err := StartServer(); err != nil {
 		fmt.Println("Server error!")
 		fmt.Println(err.Error())
