@@ -58,7 +58,8 @@ var db *gorm.DB
 var r *gin.Engine
 
 func InitDB() error {
-	_db, err := gorm.Open(mysql.Open("root:spenesa234@tcp(127.0.0.1:3306)/intern_workshop?parseTime=true"), &gorm.Config{})
+	//DBnya gue ganti dulu ya
+	_db, err := gorm.Open(mysql.Open("admin:HnVXVx8rF4G3YjS3nKuQrKVS7apg4Vzt@tcp(13.212.140.154:3306)/intern_bcc_6?parseTime=true"), &gorm.Config{})
 	if err != nil {
 		return err
 	}
@@ -395,7 +396,8 @@ func InitRouter() {
 }
 
 func StartServer() error {
-	return r.Run()
+	//Port 5000
+	return r.Run(":5000")
 }
 
 func main() {
