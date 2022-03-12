@@ -17,7 +17,7 @@ func NewService(repository Repository) *service {
 }
 
 func (s *service) Register(input User) (User, error) {
-	
+
 	user := User{
 		Name:           input.Name,
 		Email:          input.Email,
@@ -26,6 +26,9 @@ func (s *service) Register(input User) (User, error) {
 		Jenis_Budidaya: input.Jenis_Budidaya,
 		Lokasi_Tambak:  input.Lokasi_Tambak,
 		Luas_Kolam:     input.Luas_Kolam,
+		Jenis_Kelamin:  input.Jenis_Kelamin,
+		No_Telepon:     input.No_Telepon,
+		Tanggal_Lahir:  input.Tanggal_Lahir,
 	}
 
 	registerdUser, err := s.repository.Register(user)
@@ -39,4 +42,3 @@ func (s *service) Register(input User) (User, error) {
 // 	users, err := s.repository.FindAll()
 // 	return users, err
 // }
-

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"project/handler"
+	"project/ikan"
 	"project/user"
 	"strconv"
 	"time"
@@ -25,18 +26,19 @@ type User struct {
 	Jenis_Budidaya string `json:"jenis_budidaya"`
 	Lokasi_Tambak  string `json:"lokasi_tambak"`
 	Luas_Kolam     string `json:"luas_kolam"`
-	TokoID         string
+	TokoID         string `json:"toko_id"`
 }
 
 type Ikan struct {
-	ID          uint   `gorm:"primarykey" json:"id"`
-	Kategori    string `json:"kategori"`
-	Jenis_Ikan  string `json:"jenis_ikan"`
-	Harga       string `json:"harga"`
-	TokoID      uint   `json:"toko_id"`
-	Provinsi    string `json:"provinsi"`
-	Kota        string `json:"kota"`
-	Bulan_Panen string `json:"bulan_panen"`
+	ID               uint   `gorm:"primarykey" json:"id"`
+	Kategori         string `json:"kategori"`
+	Jenis_Ikan       string `json:"jenis_ikan"`
+	Harga            string `json:"harga"`
+	TokoID           uint   `json:"toko_id"`
+	Provinsi         string `json:"provinsi"`
+	Kota             string `json:"kota"`
+	Bulan_Panen      string `json:"bulan_panen"`
+	Deskripsi_Produk string `json:"deskripsi_produk"`
 }
 
 type Toko struct {
@@ -104,26 +106,11 @@ type postRegisterToko struct {
 	ID uint
 }
 
-type postTambahIkanBody struct {
-	Kategori    string `json:"kategori"`
-	Jenis_Ikan  string `json:"jenis_ikan"`
-	Harga       string `json:"harga"`
-	TokoID      uint   `json:"toko_id"`
-	Provinsi    string `json:"provinsi"`
-	Kota        string `json:"kota"`
-	Bulan_Panen string `json:"bulan_panen"`
-}
-
 type patchUserBody struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Username string `json:"username"`
-}
-
-type postCreateTweetBody struct {
-	Content   string `json:"content"`
-	RepliedTo uint   `json:"replied_to,omitempty"`
 }
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -162,8 +149,12 @@ func InitRouter() {
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
+	ikanRepository := ikan.NewRepository(db)
+	ikanService := ikan.NewService(ikanRepository)
+	ikanHandler := handler.NewIkanHandler(ikanService)
 
 	r.POST("/api/auth/register", userHandler.Register)
+	r.POST("/api/auth/tambah-ikan", ikanHandler.RegisterIkan)
 
 	r.POST("/api/auth/register-member", func(c *gin.Context) {
 		var body User
@@ -190,10 +181,13 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "User successfully registered.",
+			"message": "Berhasil Membuat Akun Member",
+			"status":  "Sukses",
 			"data": gin.H{
-				"id": user.ID,
+				"id":             user.Alamat,
+				"Jenis Budidaya": user.Jenis_Budidaya,
+				"Lokasi Tambak":  user.Lokasi_Tambak,
+				"Luas Kolam":     user.Luas_Kolam,
 			},
 		})
 	})
@@ -308,8 +302,8 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Update successful.",
+			"message": "Berhasil Memperbarui Akun",
+			"status":  "Sukses",
 			"data":    user,
 		})
 	})
@@ -365,215 +359,27 @@ func InitRouter() {
 		})
 	})
 
-	r.POST("/api/auth/tambah-ikan", func(c *gin.Context) {
-		var body postTambahIkanBody
-		if err := c.BindJSON(&body); err != nil {
+	r.DELETE("/api/auth/delete-ikan", func(c *gin.Context) {
+		id, isIdExists := c.Params.Get("id")
+		if !isIdExists {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": "Body is invalid.",
-				"error":   err.Error(),
+				"message": "ID is not supplied.",
+			})
+			return
+		}
+		parsedId, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "ID is invalid.",
 			})
 			return
 		}
 		ikan := Ikan{
-			Kategori:    body.Kategori,
-			Jenis_Ikan:  body.Jenis_Ikan,
-			Harga:       body.Harga,
-			TokoID:      body.TokoID,
-			Provinsi:    body.Provinsi,
-			Kota:        body.Kota,
-			Bulan_Panen: body.Bulan_Panen,
-		}
-		if result := db.Create(&ikan); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when inserting into the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Ikan Berhasil Ditambahkan",
-			"data":    ikan,
-		})
-	})
-
-	r.GET("/user", AuthMiddleware(), func(c *gin.Context) {
-		id, _ := c.Get("id")
-		user := User{}
-		if result := db.Where("id = ?", id).Take(&user); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when querying the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful",
-			"data":    user,
-		})
-	})
-
-	r.GET("/user/:id", func(c *gin.Context) {
-		id, isIdExists := c.Params.Get("id")
-		if !isIdExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is not supplied.",
-			})
-			return
-		}
-		user := User{}
-		if result := db.Where("id = ?", id).Take(&user); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when querying the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful.",
-			"data":    user,
-		})
-	})
-
-	r.PATCH("/user/:id", func(c *gin.Context) {
-		id, isIdExists := c.Params.Get("id")
-		if !isIdExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is not supplied.",
-			})
-			return
-		}
-		var body patchUserBody
-		if err := c.BindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "Body is invalid.",
-				"error":   err.Error(),
-			})
-			return
-		}
-		parsedId, err := strconv.ParseUint(id, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is invalid.",
-				"error":   err.Error(),
-			})
-			return
-		}
-		user := User{
-			ID:       uint(parsedId),
-			Name:     body.Name,
-			Email:    body.Email,
-			Password: body.Password,
-		}
-		result := db.Model(&user).Updates(user)
-		if result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when updating the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		if result = db.Where("id = ?", parsedId).Take(&user); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when querying the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		if result.RowsAffected < 1 {
-			c.JSON(http.StatusNotFound, gin.H{
-				"success": false,
-				"message": "User not found.",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Update successful.",
-			"data":    user,
-		})
-	})
-
-	r.GET("/user/search", func(c *gin.Context) {
-		name, isNameExists := c.GetQuery("name")
-		email, isEmailExists := c.GetQuery("email")
-		username, isUsernameExists := c.GetQuery("username")
-		if !isNameExists && !isEmailExists && !isUsernameExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "Query is not supplied.",
-			})
-			return
-		}
-
-		var queryResults []User
-		trx := db
-		if isNameExists {
-			trx = trx.Where("name LIKE ?", "%"+name+"%")
-		}
-		if isEmailExists {
-			trx = trx.Where("email LIKE ?", "%"+email+"%")
-		}
-		if isUsernameExists {
-			trx = trx.Where("username LIKE ?", "%"+username+"%")
-		}
-
-		if result := trx.Find(&queryResults); result.Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "Query is not supplied.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Search successful",
-			"data": gin.H{
-				"query": gin.H{
-					"name":     name,
-					"email":    email,
-					"username": username,
-				},
-				"result": queryResults,
-			},
-		})
-	})
-
-	r.DELETE("/user/:id", func(c *gin.Context) {
-		id, isIdExists := c.Params.Get("id")
-		if !isIdExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is not supplied.",
-			})
-			return
-		}
-		parsedId, err := strconv.ParseUint(id, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is invalid.",
-			})
-			return
-		}
-		user := User{
 			ID: uint(parsedId),
 		}
-		if result := db.Delete(&user); result.Error != nil {
+		if result := db.Delete(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
 				"message": "Error when deleting from the database.",
@@ -582,178 +388,8 @@ func InitRouter() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Delete successful.",
-		})
-	})
-
-	r.POST("/tweet", AuthMiddleware(), func(c *gin.Context) {
-		id, _ := c.Get("id")
-		var body postCreateTweetBody
-		if err := c.BindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "Body is invalid.",
-				"error":   err.Error(),
-			})
-			return
-		}
-		repliedTo := sql.NullInt64{
-			Int64: 0,
-			Valid: false,
-		}
-		if body.RepliedTo != 0 {
-			repliedTo.Int64 = int64(body.RepliedTo)
-			repliedTo.Valid = true
-		}
-		tweet := Tweet{
-			Content:   body.Content,
-			UserID:    uint(id.(float64)),
-			CreatedAt: time.Now(),
-			RepliedTo: repliedTo,
-		}
-		if result := db.Create(&tweet); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when inserting into the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Tweet successfully created.",
-			"data": gin.H{
-				"id": tweet.ID,
-			},
-		})
-	})
-
-	r.GET("/tweet/:id", func(c *gin.Context) {
-		id, isIdExists := c.Params.Get("id")
-		if !isIdExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is not supplied.",
-			})
-			return
-		}
-		withReplies := false
-		withRepliesStr, isWithRepliesSet := c.GetQuery("with_replies")
-		if isWithRepliesSet {
-			_withReplies, err := strconv.ParseBool(withRepliesStr)
-			if err != nil {
-				withReplies = false
-			}
-			withReplies = _withReplies
-		}
-
-		tweet := Tweet{}
-		if result := db.Where("id = ?", id).Take(&tweet); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when querying the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-
-		var repliedTo *int64
-		var tweetReplies []Tweet
-		var tweetRepliesCleaned []gin.H
-		if tweet.RepliedTo.Valid {
-			repliedTo = &tweet.RepliedTo.Int64
-		}
-		if withReplies {
-			if result := db.Where("replied_to = ?", id).Find(&tweetReplies); result.Error != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "Error when querying the database.",
-					"error":   result.Error.Error(),
-				})
-				return
-			}
-			for _, reply := range tweetReplies {
-				tweetRepliesCleaned = append(tweetRepliesCleaned, gin.H{
-					"id":         reply.ID,
-					"user_id":    reply.UserID,
-					"content":    reply.Content,
-					"created_at": reply.CreatedAt,
-				})
-			}
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Query successful.",
-			"data": gin.H{
-				"id":         tweet.ID,
-				"user_id":    tweet.UserID,
-				"content":    tweet.Content,
-				"replied_to": repliedTo,
-				"created_at": tweet.CreatedAt,
-				"replies":    tweetRepliesCleaned,
-			},
-		})
-	})
-
-	r.DELETE("/tweet/:id", func(c *gin.Context) {
-		id, isIdExists := c.Params.Get("id")
-		if !isIdExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is not supplied.",
-			})
-			return
-		}
-		parsedId, err := strconv.ParseUint(id, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "ID is invalid.",
-			})
-			return
-		}
-		tweet := Tweet{
-			ID: uint(parsedId),
-		}
-		if result := db.Where("id = ?", id).Take(&tweet); result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when querying the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		var repliedTo *int64
-		if tweet.RepliedTo.Valid {
-			repliedTo = &tweet.RepliedTo.Int64
-		}
-		result := db.Delete(&tweet)
-		if result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "Error when deleting from the database.",
-				"error":   result.Error.Error(),
-			})
-			return
-		}
-		if result.RowsAffected < 1 {
-			c.JSON(http.StatusNotFound, gin.H{
-				"success": false,
-				"message": "ID not found.",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "Delete successful.",
-			"data": gin.H{
-				"id":         tweet.ID,
-				"user_id":    tweet.UserID,
-				"content":    tweet.Content,
-				"replied_to": repliedTo,
-			},
+			"message": "Hapus Ikan Berhasil",
+			"status":  "Sukses",
 		})
 	})
 }

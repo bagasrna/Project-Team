@@ -15,6 +15,8 @@ func NewUserHandler(userService user.Service) *userHandler {
 	return &userHandler{userService}
 }
 
+
+
 func (h *userHandler) Register(c *gin.Context) {
 	_, isEmailExists := c.GetQuery("email")
 		if !isEmailExists {
@@ -50,3 +52,5 @@ func (h *userHandler) Register(c *gin.Context) {
 		},
 	})
 }
+
+
