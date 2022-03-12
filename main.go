@@ -155,49 +155,14 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func InitRouter() {
-	// r.POST("/api/auth/register", func(c *gin.Context) {
+	userRepository := user.NewRepository(db)
+	userService := user.NewService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
 
-	// 	var body postRegisterBody
-	// 	if err := c.BindJSON(&body); err != nil {
-	// 		c.JSON(http.StatusBadRequest, gin.H{
-	// 			"message": "Body is invalid.",
-	// 			"success": false,
-	// 			"error":   err.Error(),
-	// 		})
-	// 		return
-	// 	}
-	// 	user := User{
-	// 		Name:     body.Name,
-	// 		Email:    body.Email,
-	// 		Password: body.Password,
-	// 	}
-	// 	if result := db.Create(&user); result.Error != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{
-	// 			"success": false,
-	// 			"message": "Error when inserting into the database.",
-	// 			"error":   result.Error.Error(),
-	// 		})
-	// 		return
-	// 	}
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"message": "Berhasil Membuat Akun",
-	// 		"status":  "Sukses",
-	// 		"data": gin.H{
-	// 			"id": user.ID,
-	// 		},
-	// 	})
-	// })
+	r.POST("/api/auth/register",userHandler.Register)
 
 	r.POST("/api/auth/register-member", func(c *gin.Context) {
-		_, isEmailExists := c.GetQuery("email")
-		if !isEmailExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Email Sudah Digunakan.",
-				"status":  "Register Gagal.",
-			})
-			return
-		}
-		var body postRegisterBody
+		var body User
 		if err := c.BindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
@@ -207,8 +172,6 @@ func InitRouter() {
 			return
 		}
 		user := User{
-			Name:           body.Name,
-			Email:          body.Email,
 			Alamat:         body.Alamat,
 			Jenis_Budidaya: body.Jenis_Budidaya,
 			Lokasi_Tambak:  body.Lokasi_Tambak,
@@ -737,13 +700,11 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
+	
 	InitGin()
 	InitRouter()
-	userRepository := user.NewRepository(db)
-	userService := user.NewService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
-
-	r.POST("/api/auth/register",userHandler.Register)
+	
+	
 	if err := StartServer(); err != nil {
 		fmt.Println("Server error!")
 		fmt.Println(err.Error())

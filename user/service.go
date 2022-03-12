@@ -17,6 +17,7 @@ func NewService(repository Repository) *service {
 }
 
 func (s *service) Register(input User) (User, error) {
+	
 	user := User{
 		Name:           input.Name,
 		Email:          input.Email,

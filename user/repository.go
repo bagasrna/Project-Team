@@ -19,6 +19,7 @@ func NewRepository(db *gorm.DB) *repository {
 }
 
 func (r *repository) Register(user User) (User, error) {
+	
 	err := r.db.Create(&user).Error
 	return user, err
 }
