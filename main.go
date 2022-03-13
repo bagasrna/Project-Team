@@ -147,6 +147,7 @@ func InitRouter() {
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
+
 	ikanRepository := ikan.NewRepository(db)
 	ikanService := ikan.NewService(ikanRepository)
 	ikanHandler := handler.NewIkanHandler(ikanService)
@@ -354,6 +355,38 @@ func InitRouter() {
 			"message": "Pencarian Berhasil",
 			"status":  "Sukses",
 			"data":    ikan,
+		})
+	})
+
+	r.GET("/api/auth/cari-ikan", func(c *gin.Context) {
+		name, isNameExists := c.GetQuery("jenis_ikan")
+		if !isNameExists{
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Query is not supplied.",
+			})
+			return
+		}
+
+		var queryResults []Ikan
+		trx := db
+		if isNameExists {
+			trx = trx.Where("name LIKE ?", "%"+name+"%")
+		}
+
+		if result := trx.Find(&queryResults); result.Error != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Query is not supplied.",
+				"error":   result.Error.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Pencarian Berhasil",
+			"status":  "Sukses",
+			"data":    queryResults,
 		})
 	})
 

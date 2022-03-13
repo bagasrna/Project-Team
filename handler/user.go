@@ -18,14 +18,14 @@ func NewUserHandler(userService user.Service) *userHandler {
 
 
 func (h *userHandler) Register(c *gin.Context) {
-	_, isEmailExists := c.GetQuery("email")
-		if !isEmailExists {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Email Sudah Digunakan.",
-				"status":  "Register Gagal.",
-			})
-			return
-		}
+	// _, isEmailExists := c.GetQuery("email")
+	// 	if !isEmailExists {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"message": "Email Sudah Digunakan.",
+	// 			"status":  "Register Gagal.",
+	// 		})
+	// 		return
+	// 	}
 	var userRequest user.User
 	if err := c.ShouldBindJSON(&userRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
