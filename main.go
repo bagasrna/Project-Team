@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	// "database/sql"
 	"fmt"
 	"net/http"
 	"project/handler"
@@ -39,7 +39,6 @@ type Ikan struct {
 	Kota             string `json:"kota"`
 	Bulan_Panen      string `json:"bulan_panen"`
 	Deskripsi_Produk string `json:"deskripsi_produk"`
-	Toko             Toko
 }
 
 type Pakan struct {
@@ -52,21 +51,11 @@ type Pakan struct {
 	Bahan_Bahan string `json:"bahan_bahan"`
 	Komposisi   string `json:"komposisi"`
 	TokoID      uint   `json:"toko_id"`
-	Toko        Toko
 }
 
 type Toko struct {
 	ID       uint   `gorm:"primarykey" json:"id"`
 	NamaToko string `json:"nama_toko"`
-}
-
-type Tweet struct {
-	ID        uint `gorm:"primarykey" json:"id"`
-	UserID    uint `json:"user_id"`
-	User      User
-	Content   string        `json:"name"`
-	RepliedTo sql.NullInt64 `json:"replied_to"`
-	CreatedAt time.Time     `json:"created_at"`
 }
 
 var db *gorm.DB
@@ -78,13 +67,7 @@ func InitDB() error {
 		return err
 	}
 	db = _db
-	err = db.AutoMigrate(&User{}, &Tweet{}, &Ikan{})
-
-	tweet := Tweet{
-		ID: 1,
-	}
-	db.Preload("User").Take(&tweet)
-	fmt.Println(tweet)
+	err = db.AutoMigrate(&User{}, &Ikan{}, &Pakan{})
 	if err != nil {
 		return err
 	}
@@ -442,7 +425,7 @@ func InitRouter() {
 		})
 	})
 
-	r.GET("/api/auth/pakan", func(c *gin.Context) {
+	r.GET("/api/auth/cari-pakan", func(c *gin.Context) {
 		var pakan []Pakan
 		if result := db.Find(&pakan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -457,7 +440,7 @@ func InitRouter() {
 			"status":  "Sukses",
 			"data":    pakan,
 		})
-	})	
+	})
 }
 
 func StartServer() error {
