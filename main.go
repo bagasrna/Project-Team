@@ -324,7 +324,6 @@ func InitRouter() {
 	})
 
 	r.GET("/api/auth/ikan-segar", func(c *gin.Context) {
-		// ikan := Ikan{}
 		var ikan []Ikan
 		if result := db.Where("kategori = ?", "ikan segar").Find(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -342,7 +341,7 @@ func InitRouter() {
 	})
 
 	r.GET("/api/auth/ikan-frozen", func(c *gin.Context) {
-		ikan := Ikan{}
+		var ikan []Ikan
 		if result := db.Where("kategori = ?", "ikan frozen").Find(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -359,7 +358,7 @@ func InitRouter() {
 	})
 
 	r.GET("/api/auth/bibit-ikan", func(c *gin.Context) {
-		ikan := Ikan{}
+		var ikan []Ikan
 		if result := db.Where("kategori = ?", "bibit ikan").Find(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -442,6 +441,23 @@ func InitRouter() {
 			"data":    pakan,
 		})
 	})
+
+	r.GET("/api/auth/pakan", func(c *gin.Context) {
+		var pakan []Pakan
+		if result := db.Find(&pakan); result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Error when querying the database.",
+				"error":   result.Error.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Pencarian Berhasil",
+			"status":  "Sukses",
+			"data":    pakan,
+		})
+	})	
 }
 
 func StartServer() error {
