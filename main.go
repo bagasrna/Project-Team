@@ -39,23 +39,24 @@ type Ikan struct {
 	Kota             string `json:"kota"`
 	Bulan_Panen      string `json:"bulan_panen"`
 	Deskripsi_Produk string `json:"deskripsi_produk"`
-	Toko Toko
+	Toko             Toko
 }
 
 type Pakan struct {
-	ID               uint   `gorm:"primarykey" json:"id"`
-	Berat uint `json:"berat"`
-	Kategori string `json:"kategori"`
-	Etalase string `json:"etalase"`
-	Deskripsi string `json:"deskripsi"`
-	Kemasan string `json:"kemasan"`
+	ID          uint   `gorm:"primarykey" json:"id"`
+	Berat       uint   `json:"berat"`
+	Kategori    string `json:"kategori"`
+	Etalase     string `json:"etalase"`
+	Deskripsi   string `json:"deskripsi"`
+	Kemasan     string `json:"kemasan"`
 	Bahan_Bahan string `json:"bahan_bahan"`
-	Komposisi string `json:"komposisi"`
+	Komposisi   string `json:"komposisi"`
+	TokoID      uint   `json:"toko_id"`
+	Toko        Toko
 }
 
-
 type Toko struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	ID       uint   `gorm:"primarykey" json:"id"`
 	NamaToko string `json:"nama_toko"`
 }
 
@@ -405,6 +406,40 @@ func InitRouter() {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hapus Ikan Berhasil",
 			"status":  "Sukses",
+		})
+	})
+
+	r.POST("/api/auth/tambah-pakan", func(c *gin.Context) {
+		var body Pakan
+		if err := c.BindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "Body is invalid.",
+				"error":   err.Error(),
+			})
+			return
+		}
+		pakan := Pakan{
+			Berat:       body.Berat,
+			Kategori:    body.Kategori,
+			Etalase:     body.Etalase,
+			Deskripsi:   body.Deskripsi,
+			Kemasan:     body.Kemasan,
+			Bahan_Bahan: body.Bahan_Bahan,
+			Komposisi:   body.Komposisi,
+		}
+		if result := db.Create(&pakan); result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Error when inserting into the database.",
+				"error":   result.Error.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Pakan Berhasil Ditambahkan",
+			"data":    pakan,
 		})
 	})
 }
