@@ -39,10 +39,24 @@ type Ikan struct {
 	Kota             string `json:"kota"`
 	Bulan_Panen      string `json:"bulan_panen"`
 	Deskripsi_Produk string `json:"deskripsi_produk"`
+	Toko Toko
 }
+
+type Pakan struct {
+	ID               uint   `gorm:"primarykey" json:"id"`
+	Berat uint `json:"berat"`
+	Kategori string `json:"kategori"`
+	Etalase string `json:"etalase"`
+	Deskripsi string `json:"deskripsi"`
+	Kemasan string `json:"kemasan"`
+	Bahan_Bahan string `json:"bahan_bahan"`
+	Komposisi string `json:"komposisi"`
+}
+
 
 type Toko struct {
 	ID uint `gorm:"primarykey" json:"id"`
+	NamaToko string `json:"nama_toko"`
 }
 
 type Tweet struct {
@@ -309,7 +323,8 @@ func InitRouter() {
 	})
 
 	r.GET("/api/auth/ikan-segar", func(c *gin.Context) {
-		ikan := Ikan{}
+		// ikan := Ikan{}
+		var ikan []Ikan
 		if result := db.Where("kategori = ?", "ikan segar").Find(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
