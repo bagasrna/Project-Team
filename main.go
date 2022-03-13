@@ -377,7 +377,7 @@ func InitRouter() {
 		ikan := Ikan{
 			ID: uint(parsedId),
 		}
-		if result := db.Delete(&ikan); result.Error != nil {
+		if result := db.Where("id = ?", id).Delete(&ikan); result.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
 				"message": "Error when deleting from the database.",
